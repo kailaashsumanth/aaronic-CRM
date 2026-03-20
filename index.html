@@ -173,6 +173,7 @@ textarea{resize:vertical;min-height:80px;}
     <button class="ntab" onclick="showTab('export')">📤 Export / Import</button>
   </div>
   <div class="topbar-right">
+    <button class="btn-sm btn-ghost" onclick="showTab('export')" title="Import Excel file">⬆ Import Excel</button>
     <button class="btn-sm btn-ghost" onclick="showTab('export')">⬇ Export</button>
     <button class="btn-sm btn-primary" onclick="showTab('log')">+ Log Visit</button>
   </div>
@@ -319,51 +320,70 @@ textarea{resize:vertical;min-height:80px;}
 
 <!-- EXPORT / IMPORT -->
 <div class="panel" id="panel-export">
+
+  <!-- BIG IMPORT BANNER -->
+  <div style="background:linear-gradient(135deg,#1a56db,#3b82f6);border-radius:14px;padding:28px;margin-bottom:20px;color:#fff;">
+    <div style="font-size:20px;font-weight:800;margin-bottom:6px;">📂 Import Your Existing Excel File</div>
+    <div style="font-size:13px;opacity:0.85;margin-bottom:18px;line-height:1.6;">Upload your existing visit tracker Excel or CSV file. The app will automatically read all rows and extract college names, dates, contact details, outcomes and next actions.</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button onclick="document.getElementById('file-input').click()" style="background:#fff;color:#1a56db;border:none;padding:11px 22px;border-radius:8px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:800;cursor:pointer;">⬆ Upload Excel / CSV File</button>
+      <button onclick="document.getElementById('json-input').click()" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.4);padding:11px 22px;border-radius:8px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">📥 Import Team JSON</button>
+    </div>
+    <input type="file" id="file-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="importFile(this)">
+    <input type="file" id="json-input" accept=".json" style="display:none" onchange="importJSON(this)">
+  </div>
+
+  <!-- IMPORT PREVIEW -->
+  <div id="import-preview" style="display:none;margin-bottom:20px;">
+    <div class="card">
+      <div class="card-title">Preview — confirm before importing</div>
+      <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:12px 16px;margin-bottom:14px;font-size:13px;color:#166534;">
+        ✅ File read successfully! Check the preview below — then click Import to load all rows into the app.
+      </div>
+      <div id="preview-table"></div>
+      <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
+        <button class="btn-sm btn-primary" onclick="confirmImport()" style="font-size:13px;padding:10px 20px;">✓ Import All Rows</button>
+        <button class="btn-sm btn-ghost" onclick="cancelImport()">✕ Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- COLUMN MAPPING GUIDE -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-title">How the import reads your Excel columns</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">The app looks for these column names in your Excel file. Your columns don't need to match exactly — it finds the closest match automatically.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div style="background:var(--surface2);border-radius:8px;padding:10px 14px;font-size:12px;"><strong>College / Organisation Name</strong><div style="color:var(--muted);margin-top:2px;">Any column with "college", "name", "organisation"</div></div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px 14px;font-size:12px;"><strong>Visit Date</strong><div style="color:var(--muted);margin-top:2px;">Any column with "date"</div></div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px 14px;font-size:12px;"><strong>Contact Person</strong><div style="color:var(--muted);margin-top:2px;">Any column with "contact", "person", "name"</div></div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px 14px;font-size:12px;"><strong>Phone Number</strong><div style="color:var(--muted);margin-top:2px;">Any column with "phone", "number", "mobile"</div></div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px 14px;font-size:12px;"><strong>Outcome / Discussion</strong><div style="color:var(--muted);margin-top:2px;">Any column with "outcome", "discussion", "details"</div></div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px 14px;font-size:12px;"><strong>Next Action</strong><div style="color:var(--muted);margin-top:2px;">Any column with "next", "action", "follow"</div></div>
+    </div>
+  </div>
+
+  <!-- EXPORT OPTIONS -->
+  <div class="card-title" style="font-size:14px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><span style="width:3px;height:16px;background:var(--accent);border-radius:2px;display:block;"></span>Export Options</div>
   <div class="export-grid">
     <div class="exp-card" onclick="exportExcel()">
       <div class="exp-icon">📊</div>
       <div class="exp-title">Export to Excel (.xlsx)</div>
-      <div class="exp-desc">Download all visit records as a formatted Excel file. Opens directly in Microsoft Excel or Google Sheets.</div>
+      <div class="exp-desc">All visit records as a formatted Excel file with 2 sheets — visits and colleges.</div>
     </div>
     <div class="exp-card" onclick="exportCSV()">
       <div class="exp-icon">📄</div>
       <div class="exp-title">Export to CSV</div>
-      <div class="exp-desc">Universal format. Paste into any spreadsheet. Best for sharing with management.</div>
+      <div class="exp-desc">Universal format. Open in any spreadsheet. Best for sharing with management.</div>
     </div>
     <div class="exp-card" onclick="exportCollegesExcel()">
       <div class="exp-icon">🏫</div>
       <div class="exp-title">Export Colleges List</div>
-      <div class="exp-desc">Download your complete college database including all contact details and status.</div>
+      <div class="exp-desc">Complete college database with contact details and visit status.</div>
     </div>
     <div class="exp-card" onclick="exportTeamJSON()">
       <div class="exp-icon">👥</div>
       <div class="exp-title">Team Share (JSON)</div>
-      <div class="exp-desc">Export all data as JSON. Send to teammates — they can import it to sync your records.</div>
-    </div>
-  </div>
-  <div class="card" style="margin-bottom:16px;">
-    <div class="card-title">Import from Excel / CSV</div>
-    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropFile(event)">
-      <div style="font-size:36px">📂</div>
-      <p><strong>Click to choose file</strong> or drag & drop here</p>
-      <p>Supports .xlsx, .xls, .csv files</p>
-    </div>
-    <input type="file" id="file-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="importFile(this)">
-    <div id="import-preview" style="margin-top:16px;display:none;">
-      <p style="font-weight:600;margin-bottom:10px;">Preview — first 5 rows:</p>
-      <div id="preview-table"></div>
-      <div style="display:flex;gap:10px;margin-top:14px;">
-        <button class="btn-sm btn-primary" onclick="confirmImport()">✓ Import All Rows</button>
-        <button class="btn-sm btn-ghost" onclick="cancelImport()">Cancel</button>
-      </div>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-title">Import Team Data (JSON)</div>
-    <p style="color:var(--muted);font-size:13px;margin-bottom:14px;">Received a JSON file from a teammate? Import it here to merge their records with yours.</p>
-    <div style="display:flex;gap:10px;">
-      <button class="btn-sm btn-primary" onclick="document.getElementById('json-input').click()">📥 Import JSON</button>
-      <input type="file" id="json-input" accept=".json" style="display:none" onchange="importJSON(this)">
+      <div class="exp-desc">Export all data as JSON. Send to teammates to merge records.</div>
     </div>
   </div>
 </div>
@@ -372,22 +392,65 @@ textarea{resize:vertical;min-height:80px;}
 
 <!-- ADD COLLEGE MODAL -->
 <div class="modal-bg hidden" id="add-college-modal">
-  <div class="modal">
-    <h3 id="modal-title">Add New College</h3>
+  <div class="modal" style="max-width:580px;">
+    <h3 id="modal-title">➕ Add New College / Organisation</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:18px;margin-top:-6px;">Fill the details below. Only the name is required — you can fill the rest later.</p>
     <div class="form-grid">
-      <div class="fg full"><label>College Name *</label><input type="text" id="m-name" placeholder="Full name"></div>
-      <div class="fg"><label>Type</label>
-        <select id="m-type"><option>Degree</option><option>Engineering</option><option>UPSC</option><option>School</option><option>Other</option></select>
+      <div class="fg full">
+        <label>College / Organisation Name *</label>
+        <input type="text" id="m-name" placeholder="e.g. ABC Degree College or XYZ IAS Academy">
       </div>
-      <div class="fg"><label>Location / Area</label><input type="text" id="m-location" placeholder="e.g. Narayanaguda"></div>
-      <div class="fg"><label>Phone</label><input type="tel" id="m-phone" placeholder="Contact number"></div>
-      <div class="fg"><label>Email</label><input type="email" id="m-email" placeholder="info@college.com"></div>
-      <div class="fg"><label>Head / Principal</label><input type="text" id="m-head" placeholder="Name & designation"></div>
-      <div class="fg full"><label>Address</label><input type="text" id="m-address" placeholder="Full address"></div>
-      <div class="fg full"><label>Notes / Pre-visit Analysis</label><textarea id="m-notes" style="min-height:60px"></textarea></div>
+      <div class="fg">
+        <label>Organisation Type</label>
+        <select id="m-type">
+          <option>Degree</option>
+          <option>Engineering</option>
+          <option>UPSC</option>
+          <option>School</option>
+          <option>Polytechnic</option>
+          <option>Medical</option>
+          <option>Management / MBA</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Area / Location</label>
+        <input type="text" id="m-location" placeholder="e.g. Narayanaguda, Ghatkeswar">
+      </div>
+      <div class="fg">
+        <label>Phone Number</label>
+        <input type="tel" id="m-phone" placeholder="10-digit number">
+      </div>
+      <div class="fg">
+        <label>Email</label>
+        <input type="email" id="m-email" placeholder="info@college.com">
+      </div>
+      <div class="fg">
+        <label>Head / Principal Name</label>
+        <input type="text" id="m-head" placeholder="Name and designation">
+      </div>
+      <div class="fg">
+        <label>State</label>
+        <select id="m-state">
+          <option>Telangana</option><option>Andhra Pradesh</option><option>Karnataka</option>
+          <option>Tamil Nadu</option><option>Maharashtra</option><option>Other</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Website</label>
+        <input type="text" id="m-website" placeholder="www.college.com">
+      </div>
+      <div class="fg full">
+        <label>Full Address</label>
+        <input type="text" id="m-address" placeholder="Street, Area, City, Pincode">
+      </div>
+      <div class="fg full">
+        <label>Notes / Pre-visit Analysis</label>
+        <textarea id="m-notes" style="min-height:70px" placeholder="Any background info, existing tools they use, opportunity level, referred by whom..."></textarea>
+      </div>
     </div>
     <div class="modal-footer">
-      <button class="btn-sm btn-primary" onclick="saveCollege()">Save College</button>
+      <button class="btn-sm btn-primary" style="padding:10px 24px;font-size:13px;" onclick="saveCollege()">💾 Save Organisation</button>
       <button class="btn-sm btn-ghost" onclick="closeModal('add-college-modal')">Cancel</button>
     </div>
   </div>
@@ -631,13 +694,13 @@ function logVisitFromDetail() {
   }, 100);
 }
 
-function openAddCollege() { editingCollegeId = null; document.getElementById('modal-title').textContent = 'Add New College'; ['m-name','m-location','m-phone','m-email','m-head','m-address','m-notes'].forEach(id => document.getElementById(id).value=''); document.getElementById('m-type').value='Degree'; document.getElementById('add-college-modal').classList.remove('hidden'); }
+function openAddCollege() { editingCollegeId = null; document.getElementById('modal-title').textContent = '➕ Add New College / Organisation'; ['m-name','m-location','m-phone','m-email','m-head','m-address','m-notes','m-website'].forEach(id => document.getElementById(id).value=''); document.getElementById('m-type').value='Degree'; document.getElementById('m-state').value='Telangana'; document.getElementById('add-college-modal').classList.remove('hidden'); }
 
 function editCollege(id) {
   const c = colleges.find(x => x.id === id);
   if (!c) return;
   editingCollegeId = id;
-  document.getElementById('modal-title').textContent = 'Edit College';
+  document.getElementById('modal-title').textContent = 'Edit Organisation';
   document.getElementById('m-name').value = c.name;
   document.getElementById('m-type').value = c.type;
   document.getElementById('m-location').value = c.location || '';
@@ -646,6 +709,8 @@ function editCollege(id) {
   document.getElementById('m-head').value = c.head || '';
   document.getElementById('m-address').value = c.address || '';
   document.getElementById('m-notes').value = c.notes || '';
+  document.getElementById('m-state').value = c.state || 'Telangana';
+  document.getElementById('m-website').value = c.website || '';
   document.getElementById('add-college-modal').classList.remove('hidden');
 }
 
@@ -654,11 +719,11 @@ function saveCollege() {
   if (!name) { toast('Enter college name', 'error'); return; }
   if (editingCollegeId) {
     const idx = colleges.findIndex(c => c.id === editingCollegeId);
-    colleges[idx] = { ...colleges[idx], name, type: document.getElementById('m-type').value, location: document.getElementById('m-location').value, phone: document.getElementById('m-phone').value, email: document.getElementById('m-email').value, head: document.getElementById('m-head').value, address: document.getElementById('m-address').value, notes: document.getElementById('m-notes').value };
+    colleges[idx] = { ...colleges[idx], name, type: document.getElementById('m-type').value, location: document.getElementById('m-location').value, phone: document.getElementById('m-phone').value, email: document.getElementById('m-email').value, head: document.getElementById('m-head').value, address: document.getElementById('m-address').value, notes: document.getElementById('m-notes').value, state: document.getElementById('m-state').value, website: document.getElementById('m-website').value };
   } else {
-    colleges.push({ id: Date.now(), name, type: document.getElementById('m-type').value, location: document.getElementById('m-location').value, phone: document.getElementById('m-phone').value, email: document.getElementById('m-email').value, head: document.getElementById('m-head').value, address: document.getElementById('m-address').value, notes: document.getElementById('m-notes').value });
+    colleges.push({ id: Date.now(), name, type: document.getElementById('m-type').value, location: document.getElementById('m-location').value, phone: document.getElementById('m-phone').value, email: document.getElementById('m-email').value, head: document.getElementById('m-head').value, address: document.getElementById('m-address').value, notes: document.getElementById('m-notes').value, state: document.getElementById('m-state').value, website: document.getElementById('m-website').value });
   }
-  save(); closeModal('add-college-modal'); renderColleges(); populateCollegeSelect(); toast(editingCollegeId ? 'College updated!' : 'College added!');
+  save(); closeModal('add-college-modal'); renderColleges(); populateCollegeSelect(); toast(editingCollegeId ? 'Organisation updated!' : 'Organisation added!');
 }
 
 function deleteCollege(id) {
@@ -804,9 +869,6 @@ function downloadText(content, filename, type) {
 }
 
 // ─── IMPORT ───────────────────────────────────────────────────────────────────
-function dragOver(e) { e.preventDefault(); document.getElementById('drop-zone').classList.add('dragover'); }
-function dragLeave() { document.getElementById('drop-zone').classList.remove('dragover'); }
-function dropFile(e) { e.preventDefault(); dragLeave(); const f = e.dataTransfer.files[0]; if (f) processImportFile(f); }
 function importFile(input) { if (input.files[0]) processImportFile(input.files[0]); }
 
 function processImportFile(file) {
@@ -828,9 +890,10 @@ function showPreview(data) {
   const preview = document.getElementById('import-preview');
   const tbl = document.getElementById('preview-table');
   const rows = data.slice(0, 6);
-  tbl.innerHTML = `<div class="tbl-wrap"><table><thead><tr>${(rows[0]||[]).map(h=>`<th>${h||''}</th>`).join('')}</tr></thead><tbody>${rows.slice(1).map(r=>`<tr>${r.map(c=>`<td style="font-size:11px">${c||''}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  tbl.innerHTML = `<div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Showing first 5 rows of <strong style="color:var(--text)">${data.length - 1} total rows</strong> found in your file:</div><div class="tbl-wrap"><table><thead><tr>${(rows[0]||[]).map(h=>`<th>${h||''}</th>`).join('')}</tr></thead><tbody>${rows.slice(1).map(r=>`<tr>${r.map(c=>`<td style="font-size:11px">${c||''}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
   preview.style.display = 'block';
-  toast(`Found ${data.length - 1} rows ready to import`);
+  preview.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  toast(`Found ${data.length - 1} rows — review and click Import`);
 }
 
 function confirmImport() {
